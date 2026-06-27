@@ -67,10 +67,15 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
         unit_price: item.unit_price,
       }));
 
-      // 1. Insert order to Supabase
-      const { data, error } = await supabase
+      // Generate the UUID client-side to prevent RLS read/select violation
+      const orderId = crypto.randomUUID();
+      setShortOrderId(orderId.substring(0, 8));
+
+      // 1. Insert order to Supabase without retrieving it via .select()
+      const { error } = await supabase
         .from('orders')
         .insert({
+          id: orderId,
           customer_name: name,
           customer_phone: fullPhone,
           customer_address: address,
@@ -79,14 +84,9 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
           payment_method: paymentMethod,
           special_instructions: instructions || null,
           status: 'pending',
-        })
-        .select()
-        .single();
+        });
 
       if (error) throw error;
-
-      const orderId = data.id;
-      setShortOrderId(orderId.substring(0, 8));
 
       // 2. Format WhatsApp Message
       const message = formatWhatsAppMessage({
