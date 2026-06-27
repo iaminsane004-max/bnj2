@@ -11,28 +11,41 @@ import Link from 'next/link';
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 
-async function getInitialProducts() {
+async function getInitialData() {
   try {
     const supabase = createClient();
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .order('is_featured', { ascending: false })
-      .order('created_at', { ascending: false });
+    const [productsRes, bakewareRes] = await Promise.all([
+      supabase
+        .from('products')
+        .select('*')
+        .order('is_featured', { ascending: false })
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('bakeware')
+        .select('*')
+        .order('is_featured', { ascending: false })
+        .order('created_at', { ascending: false }),
+    ]);
 
-    if (error) {
-      console.error('Supabase fetch error:', error);
-      return [];
+    if (productsRes.error) {
+      console.error('Products fetch error:', productsRes.error);
     }
-    return data || [];
+    if (bakewareRes.error) {
+      console.error('Bakeware fetch error:', bakewareRes.error);
+    }
+
+    return {
+      products: productsRes.data || [],
+      bakeware: bakewareRes.data || [],
+    };
   } catch (err) {
-    console.error('Failed to get initial products:', err);
-    return [];
+    console.error('Failed to get initial data:', err);
+    return { products: [], bakeware: [] };
   }
 }
 
 export default async function Home() {
-  const products = await getInitialProducts();
+  const { products, bakeware } = await getInitialData();
   const shopName = process.env.NEXT_PUBLIC_SHOP_NAME || 'Bake & Joy';
   const shopTagline = process.env.NEXT_PUBLIC_SHOP_TAGLINE || 'Fresh baked, straight to your door';
   const shopAddress = process.env.NEXT_PUBLIC_SHOP_ADDRESS || '123 Bakery Lane, Sweet Town';
@@ -58,7 +71,7 @@ export default async function Home() {
       <Hero shopName={shopName} shopTagline={shopTagline} />
 
       {/* Catalogue & Realtime Filter Grid */}
-      <StorefrontCatalogue initialProducts={products} />
+      <StorefrontCatalogue initialProducts={products} initialBakeware={bakeware} />
 
       {/* Footer */}
       <footer className="mt-auto border-t border-brand-brown/10 bg-[#3B1F0E] text-[#FDF6EC] py-12 px-6 md:px-12 text-left">

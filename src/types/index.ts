@@ -12,6 +12,20 @@ export interface Product {
   updated_at: string;
 }
 
+export interface Bakeware {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  category: string;
+  image_url: string | null;
+  is_available: boolean;
+  is_featured: boolean;
+  stock_count: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface CartItem {
   product_id: string;
   name: string;

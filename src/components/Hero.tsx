@@ -9,13 +9,17 @@ interface HeroProps {
 }
 
 export default function Hero({ shopName, shopTagline }: HeroProps) {
-  const handleScrollToCatalogue = () => {
+  const handleScrollToCatalogue = (tab: 'bakery' | 'bakeware') => {
     const el = document.getElementById('catalogue');
     if (el) el.scrollIntoView({ behavior: 'smooth' });
+    
+    // Dispatch tab switch event
+    window.dispatchEvent(new CustomEvent('change-catalogue-tab', { detail: tab }));
   };
 
   const handleSearchFocus = () => {
-    handleScrollToCatalogue();
+    const el = document.getElementById('catalogue');
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
     setTimeout(() => {
       window.dispatchEvent(new Event('focus-storefront-search'));
     }, 400);
@@ -35,7 +39,7 @@ export default function Hero({ shopName, shopTagline }: HeroProps) {
 
         <div className="max-w-4xl w-full z-10 space-y-8 flex flex-col items-center">
           <h1 className="text-4xl md:text-6xl font-sans font-black tracking-tight text-white leading-tight">
-            Order cakes. Shop breads. Bake & Joy it!
+            Order cakes. Shop tools. Bake & Joy it!
           </h1>
           <p className="text-sm md:text-lg font-medium text-white/90">
             {shopTagline}
@@ -56,7 +60,7 @@ export default function Hero({ shopName, shopTagline }: HeroProps) {
               className="flex-1 flex items-center gap-3 px-4 py-3 md:py-4 text-neutral-400 text-sm font-medium cursor-pointer bg-white rounded-xl hover:bg-neutral-50/50 transition-colors"
             >
               <Search className="w-5 h-5 text-neutral-400 shrink-0" />
-              <span className="text-left flex-1">Search for cakes, breads, cookies or more...</span>
+              <span className="text-left flex-1">Search for cakes, molds, ingredients or more...</span>
             </div>
           </div>
         </div>
@@ -66,53 +70,53 @@ export default function Hero({ shopName, shopTagline }: HeroProps) {
       <section className="w-full max-w-6xl mx-auto px-6 md:px-12 py-12 grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
         {/* Bakery Delivery Card */}
         <div
-          onClick={handleScrollToCatalogue}
+          onClick={() => handleScrollToCatalogue('bakery')}
           className="bg-white hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 rounded-[32px] border border-neutral-200 overflow-hidden p-6 md:p-8 flex items-center justify-between cursor-pointer group shadow-sm"
         >
           <div className="space-y-3 flex-1 pr-4">
             <h3 className="text-2xl md:text-3xl font-sans font-black text-brand-brown uppercase tracking-tight">
-              Bakery Delivery
+              Bake Shop
             </h3>
             <p className="text-xs text-neutral-500 font-bold uppercase tracking-wider">
-              From our ovens to your door
+              Fresh cakes, breads & pastries
             </p>
             <span className="inline-block bg-swiggy-orange/10 text-swiggy-orange text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-wider">
-              Fresh Daily
+              100% Fresh
             </span>
             <div className="pt-4">
               <span className="inline-flex items-center gap-2 bg-swiggy-orange text-white font-bold text-xs uppercase tracking-wider px-5 py-3 rounded-xl shadow-md group-hover:bg-brand-brown transition-colors">
-                Explore <ArrowRight className="w-4 h-4" />
+                Shop Bakery <ArrowRight className="w-4 h-4" />
               </span>
             </div>
           </div>
           <div className="w-32 h-32 md:w-36 md:h-36 bg-brand-cream/60 rounded-2xl overflow-hidden flex items-center justify-center text-6xl group-hover:scale-105 transition-transform shrink-0 select-none">
-            🎂
+            🍰
           </div>
         </div>
 
-        {/* Today's Specials Card */}
+        {/* Bakeware Store Card */}
         <div
-          onClick={handleScrollToCatalogue}
+          onClick={() => handleScrollToCatalogue('bakeware')}
           className="bg-white hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 rounded-[32px] border border-neutral-200 overflow-hidden p-6 md:p-8 flex items-center justify-between cursor-pointer group shadow-sm"
         >
           <div className="space-y-3 flex-1 pr-4">
             <h3 className="text-2xl md:text-3xl font-sans font-black text-brand-brown uppercase tracking-tight">
-              Today's Specials
+              Bakeware Store
             </h3>
             <p className="text-xs text-neutral-500 font-bold uppercase tracking-wider">
-              Chef's curated delights
+              Pans, molds & ingredients
             </p>
             <span className="inline-block bg-brand-amber/10 text-brand-amber text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-wider">
-              Limited Stock
+              Baking Supplies
             </span>
             <div className="pt-4">
               <span className="inline-flex items-center gap-2 bg-brand-amber text-white font-bold text-xs uppercase tracking-wider px-5 py-3 rounded-xl shadow-md group-hover:bg-brand-brown transition-colors">
-                Explore <ArrowRight className="w-4 h-4" />
+                Shop Supplies <ArrowRight className="w-4 h-4" />
               </span>
             </div>
           </div>
           <div className="w-32 h-32 md:w-36 md:h-36 bg-brand-rose/10 rounded-2xl overflow-hidden flex items-center justify-center text-6xl group-hover:scale-105 transition-transform shrink-0 select-none">
-            🍪
+            🥣
           </div>
         </div>
       </section>

@@ -1,35 +1,56 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Product } from '@/types';
+import { Product, Bakeware } from '@/types';
 import { supabase } from '@/lib/supabase';
 import ProductCard from './ProductCard';
 import { Search, SlidersHorizontal, Loader2, ArrowUp } from 'lucide-react';
 
 const categoryEmojis: Record<string, string> = {
   All: '🍽️',
+  // Bakery
   Cakes: '🎂',
   Breads: '🍞',
   Cookies: '🍪',
   Pastries: '🧁',
   Seasonal: '🍩',
+  // Bakeware
+  'Pans & Molds': '🍳',
+  'Tools & Utensils': '🥣',
+  Decorations: '✨',
+  Ingredients: '🌾',
 };
 
 interface StorefrontCatalogueProps {
   initialProducts: Product[];
+  initialBakeware: Bakeware[];
 }
 
-export default function StorefrontCatalogue({ initialProducts }: StorefrontCatalogueProps) {
+export default function StorefrontCatalogue({ initialProducts, initialBakeware }: StorefrontCatalogueProps) {
   const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [bakeware, setBakeware] = useState<Bakeware[]>(initialBakeware);
+  const [activeDepartment, setActiveDepartment] = useState<'bakery' | 'bakeware'>('bakery');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('Default');
-  const [isLoading, setIsLoading] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Expose search focus handler globally or via ref simulation
+  // Listen for custom tab switch events from Hero cards
+  useEffect(() => {
+    const handleTabChange = (e: Event) => {
+      const customEvent = e as CustomEvent<'bakery' | 'bakeware'>;
+      if (customEvent.detail) {
+        setActiveDepartment(customEvent.detail);
+        setSelectedCategory('All');
+      }
+    };
+    window.addEventListener('change-catalogue-tab', handleTabChange);
+    return () => window.removeEventListener('change-catalogue-tab', handleTabChange);
+  }, []);
+
+  // Search focus event listener
   useEffect(() => {
     const handleFocusSearch = () => {
       if (searchInputRef.current) {
@@ -41,7 +62,7 @@ export default function StorefrontCatalogue({ initialProducts }: StorefrontCatal
     return () => window.removeEventListener('focus-storefront-search', handleFocusSearch);
   }, []);
 
-  // Back to top visibility listener
+  // Back to top scroll visibility
   useEffect(() => {
     const toggleVisibility = () => {
       if (window.scrollY > 500) {
@@ -54,49 +75,76 @@ export default function StorefrontCatalogue({ initialProducts }: StorefrontCatal
     return () => window.removeEventListener('scroll', toggleVisibility);
   }, []);
 
-  // Realtime subscription setup
+  // Realtime subscription setup for products
   useEffect(() => {
-    const channel = supabase
-      .channel('products_storefront')
+    const productsChannel = supabase
+      .channel('realtime_products_storefront')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'products' },
         (payload) => {
           if (payload.eventType === 'INSERT') {
-            const newProduct = payload.new as Product;
-            setProducts((prev) => [newProduct, ...prev]);
+            setProducts((prev) => [payload.new as Product, ...prev]);
           } else if (payload.eventType === 'UPDATE') {
-            const updatedProduct = payload.new as Product;
-            setProducts((prev) =>
-              prev.map((item) => (item.id === updatedProduct.id ? updatedProduct : item))
-            );
+            const updated = payload.new as Product;
+            setProducts((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
           } else if (payload.eventType === 'DELETE') {
-            const deletedProduct = payload.old as { id: string };
-            setProducts((prev) => prev.filter((item) => item.id !== deletedProduct.id));
+            const deleted = payload.old as { id: string };
+            setProducts((prev) => prev.filter((item) => item.id !== deleted.id));
+          }
+        }
+      )
+      .subscribe();
+
+    // Realtime subscription setup for bakeware
+    const bakewareChannel = supabase
+      .channel('realtime_bakeware_storefront')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'bakeware' },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setBakeware((prev) => [payload.new as Bakeware, ...prev]);
+          } else if (payload.eventType === 'UPDATE') {
+            const updated = payload.new as Bakeware;
+            setBakeware((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+          } else if (payload.eventType === 'DELETE') {
+            const deleted = payload.old as { id: string };
+            setBakeware((prev) => prev.filter((item) => item.id !== deleted.id));
           }
         }
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(productsChannel);
+      supabase.removeChannel(bakewareChannel);
     };
   }, []);
 
-  // Dynamic Categories list
-  const categories = useMemo(() => {
-    const list = new Set(products.map((p) => p.category));
-    return ['All', ...Array.from(list)];
-  }, [products]);
+  // Determine current active catalog list
+  const activeItems = useMemo((): Product[] => {
+    if (activeDepartment === 'bakery') {
+      return products;
+    }
+    // Bakeware has the same properties as Product, so safe to cast
+    return bakeware as unknown as Product[];
+  }, [activeDepartment, products, bakeware]);
 
-  // Featured / Today's Specials
+  // Dynamic Categories list based on active department items
+  const categories = useMemo(() => {
+    const list = new Set(activeItems.map((p) => p.category));
+    return ['All', ...Array.from(list)];
+  }, [activeItems]);
+
+  // Featured Chef's specials
   const featuredProducts = useMemo(() => {
-    return products.filter((p) => p.is_featured && p.is_available);
-  }, [products]);
+    return activeItems.filter((p) => p.is_featured && p.is_available);
+  }, [activeItems]);
 
   // Filtered & Sorted Products
   const filteredProducts = useMemo(() => {
-    let list = [...products];
+    let list = [...activeItems];
 
     // Category filter
     if (selectedCategory !== 'All') {
@@ -128,12 +176,7 @@ export default function StorefrontCatalogue({ initialProducts }: StorefrontCatal
     }
 
     return list;
-  }, [products, selectedCategory, searchQuery, sortBy]);
-
-  const scrollToCatalogue = () => {
-    const el = document.getElementById('catalogue');
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
-  };
+  }, [activeItems, selectedCategory, searchQuery, sortBy]);
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -141,7 +184,7 @@ export default function StorefrontCatalogue({ initialProducts }: StorefrontCatal
 
   return (
     <div className="w-full">
-      {/* Featured Section */}
+      {/* Featured Specials Section */}
       {featuredProducts.length > 0 && (
         <section className="py-10 px-6 md:px-12 bg-brand-rose/10 border-b border-brand-brown/5">
           <div className="max-w-7xl mx-auto">
@@ -170,6 +213,33 @@ export default function StorefrontCatalogue({ initialProducts }: StorefrontCatal
 
       {/* Main Catalogue Section */}
       <section id="catalogue" className="py-12 px-6 md:px-12 max-w-7xl mx-auto">
+        
+        {/* Department Switcher */}
+        <div className="flex justify-center border-b border-brand-brown/5 pb-6 mb-8">
+          <div className="flex bg-brand-brown/5 p-1 rounded-2xl border border-brand-brown/10 shadow-inner">
+            <button
+              onClick={() => { setActiveDepartment('bakery'); setSelectedCategory('All'); }}
+              className={`px-6 md:px-10 py-3.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                activeDepartment === 'bakery'
+                  ? 'bg-swiggy-orange text-white shadow-md'
+                  : 'text-brand-brown/70 hover:text-brand-brown'
+              }`}
+            >
+              🧁 Fresh Bake Shop
+            </button>
+            <button
+              onClick={() => { setActiveDepartment('bakeware'); setSelectedCategory('All'); }}
+              className={`px-6 md:px-10 py-3.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                activeDepartment === 'bakeware'
+                  ? 'bg-brand-amber text-white shadow-md'
+                  : 'text-brand-brown/70 hover:text-brand-brown'
+              }`}
+            >
+              🥣 Bakeware Store
+            </button>
+          </div>
+        </div>
+
         {/* Search, Sort, Filter Controls */}
         <div className="bg-white border border-brand-brown/10 rounded-3xl p-6 md:p-8 shadow-sm mb-10 space-y-6">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -179,7 +249,11 @@ export default function StorefrontCatalogue({ initialProducts }: StorefrontCatal
               <input
                 ref={searchInputRef}
                 type="text"
-                placeholder="Search fresh cakes, breads, pastries..."
+                placeholder={
+                  activeDepartment === 'bakery'
+                    ? 'Search fresh cakes, breads, pastries...'
+                    : 'Search baking pans, mixing tools, sprinkles...'
+                }
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-brand-cream/40 border border-brand-brown/15 rounded-2xl pl-12 pr-4 py-3.5 text-sm text-brand-brown placeholder-brand-brown/50 focus:outline-none focus:border-brand-amber focus:bg-white transition-all font-medium"
@@ -207,7 +281,7 @@ export default function StorefrontCatalogue({ initialProducts }: StorefrontCatal
           {/* Categories Horizontal Scroll - Circular Swiggy style */}
           <div className="border-t border-brand-brown/5 pt-6 text-center">
             <h3 className="text-left font-serif font-black text-brand-brown text-lg mb-6">
-              Order our best bakery options
+              Order our best {activeDepartment === 'bakery' ? 'bakery' : 'supplies'} options
             </h3>
             <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-none justify-start">
               {categories.map((category) => {
@@ -223,7 +297,9 @@ export default function StorefrontCatalogue({ initialProducts }: StorefrontCatal
                     <div
                       className={`w-20 h-20 rounded-full flex items-center justify-center text-3xl shadow-xs border-2 transition-all duration-300 ${
                         isActive
-                          ? 'bg-swiggy-orange/10 border-swiggy-orange scale-105 shadow-md'
+                          ? activeDepartment === 'bakery'
+                            ? 'bg-swiggy-orange/10 border-swiggy-orange scale-105 shadow-md'
+                            : 'bg-brand-amber/10 border-brand-amber scale-105 shadow-md'
                           : 'bg-brand-cream/40 border-transparent hover:bg-neutral-100'
                       }`}
                     >
@@ -231,7 +307,11 @@ export default function StorefrontCatalogue({ initialProducts }: StorefrontCatal
                     </div>
                     <span
                       className={`text-xs font-bold tracking-wide uppercase transition-colors ${
-                        isActive ? 'text-swiggy-orange font-black' : 'text-brand-brown/70 group-hover:text-brand-brown'
+                        isActive
+                          ? activeDepartment === 'bakery'
+                            ? 'text-swiggy-orange font-black'
+                            : 'text-brand-amber font-black'
+                          : 'text-brand-brown/70 group-hover:text-brand-brown'
                       }`}
                     >
                       {category}
@@ -244,14 +324,10 @@ export default function StorefrontCatalogue({ initialProducts }: StorefrontCatal
         </div>
 
         {/* Product Grid */}
-        {isLoading ? (
-          <div className="flex justify-center items-center py-24">
-            <Loader2 className="w-10 h-10 text-brand-amber animate-spin" />
-          </div>
-        ) : filteredProducts.length === 0 ? (
+        {filteredProducts.length === 0 ? (
           <div className="text-center py-20 bg-white border border-brand-brown/10 rounded-3xl p-8 max-w-md mx-auto">
             <span className="text-5xl mb-4 block">🧁</span>
-            <h3 className="text-xl font-serif font-black text-brand-brown mb-2">No delicacies found</h3>
+            <h3 className="text-xl font-serif font-black text-brand-brown mb-2">No items found</h3>
             <p className="text-sm text-brand-brown/60 leading-relaxed">
               We couldn't find any products matching "{searchQuery || selectedCategory}". Try looking for something else!
             </p>
