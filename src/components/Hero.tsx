@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { MapPin, Search, ChevronDown, ArrowRight } from 'lucide-react';
 
 interface HeroProps {
   shopName: string;
@@ -8,63 +9,113 @@ interface HeroProps {
 }
 
 export default function Hero({ shopName, shopTagline }: HeroProps) {
-  const handleShopNowClick = () => {
+  const handleScrollToCatalogue = () => {
     const el = document.getElementById('catalogue');
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleSearchMenuClick = () => {
-    window.dispatchEvent(new Event('focus-storefront-search'));
+  const handleSearchFocus = () => {
+    handleScrollToCatalogue();
+    setTimeout(() => {
+      window.dispatchEvent(new Event('focus-storefront-search'));
+    }, 400);
   };
 
   return (
-    <section className="relative overflow-hidden py-16 md:py-24 px-6 md:px-12 bg-gradient-to-b from-brand-rose/5 to-brand-cream border-b border-brand-brown/5 flex items-center">
-      {/* Soft background illustrations / visual patterns */}
-      <div className="absolute inset-0 opacity-4 select-none pointer-events-none bg-[radial-gradient(#3B1F0E_1px,transparent_1px)] [background-size:24px_24px]" />
-      
-      <div className="max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-center relative z-10">
-        <div className="text-left space-y-6 md:max-w-xl">
-          <span className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-brand-amber bg-brand-amber/10 px-4.5 py-2 rounded-full border border-brand-amber/20">
-            🥐 100% Homemade & Fresh
-          </span>
-          <h1 className="text-5xl md:text-7xl font-serif font-black tracking-tight text-brand-brown leading-[1.05]">
-            {shopName}
-          </h1>
-          <p className="text-lg md:text-xl font-medium text-brand-brown/80 leading-relaxed font-sans">
-            {shopTagline}
-          </p>
-          <div className="flex flex-wrap gap-4 pt-2">
-            <button
-              onClick={handleShopNowClick}
-              className="bg-brand-brown hover:bg-brand-amber text-brand-cream font-bold px-8 py-4 rounded-2xl shadow-lg transition-all duration-300 transform active:scale-95 cursor-pointer text-sm uppercase tracking-wider"
-            >
-              Shop Now
-            </button>
-            <button
-              onClick={handleSearchMenuClick}
-              className="bg-white hover:bg-brand-brown/5 border border-brand-brown/20 text-brand-brown font-bold px-7 py-4 rounded-2xl transition-all duration-300 active:scale-95 cursor-pointer text-sm uppercase tracking-wider"
-            >
-              Search Menu
-            </button>
-          </div>
+    <div className="w-full flex flex-col items-center">
+      {/* Orange Swiggy Hero Banner */}
+      <section className="w-full bg-swiggy-orange text-white py-16 md:py-24 px-6 md:px-12 flex flex-col items-center justify-center relative overflow-hidden text-center">
+        {/* Soft floating illustrations in background */}
+        <div className="absolute inset-0 opacity-10 pointer-events-none select-none">
+          <div className="absolute top-10 left-10 text-4xl rotate-12">🍞</div>
+          <div className="absolute bottom-10 left-20 text-4xl -rotate-12">🧁</div>
+          <div className="absolute top-20 right-20 text-4xl rotate-45">🎂</div>
+          <div className="absolute bottom-16 right-12 text-4xl -rotate-6">🍪</div>
         </div>
 
-        {/* Hero Appetizing Placeholder Photo */}
-        <div className="relative flex items-center justify-center">
-          <div className="w-full max-w-[420px] aspect-square rounded-[40px] bg-gradient-to-tr from-brand-amber to-brand-rose p-1.5 shadow-2xl rotate-2 hover:rotate-0 transition-transform duration-500">
-            <div className="w-full h-full bg-brand-cream rounded-[34px] overflow-hidden flex flex-col items-center justify-center p-8 text-center border-2 border-dashed border-brand-brown/20 relative group">
-              <span className="text-7xl mb-4 group-hover:scale-110 transition-transform">🥞</span>
-              <h3 className="font-serif font-black text-2xl text-brand-brown mb-2">Baked with Joy</h3>
-              <p className="text-xs text-brand-brown/65 max-w-[240px] leading-relaxed">
-                Cakes, cookies, breads, and pastries crafted with the finest ingredients and delivered fresh to your door.
-              </p>
-              <div className="absolute bottom-4 text-[10px] uppercase font-bold text-brand-amber tracking-widest bg-brand-cream border border-brand-amber/15 px-3 py-1 rounded-full">
-                Pure Vegetarian
-              </div>
+        <div className="max-w-4xl w-full z-10 space-y-8 flex flex-col items-center">
+          <h1 className="text-4xl md:text-6xl font-sans font-black tracking-tight text-white leading-tight">
+            Order cakes. Shop breads. Bake & Joy it!
+          </h1>
+          <p className="text-sm md:text-lg font-medium text-white/90">
+            {shopTagline}
+          </p>
+
+          {/* Search & Location Bar */}
+          <div className="w-full max-w-3xl flex flex-col md:flex-row bg-white rounded-2xl overflow-hidden shadow-2xl p-1 gap-1 border border-neutral-100">
+            {/* Location selector */}
+            <div className="flex items-center gap-2.5 px-4 py-3 md:py-4 bg-neutral-50 rounded-xl text-neutral-800 text-sm font-bold shrink-0 md:w-72 select-none border-b md:border-b-0 md:border-r border-neutral-100">
+              <MapPin className="w-5 h-5 text-swiggy-orange shrink-0" />
+              <span className="truncate text-left flex-1">Sweet Town, Foodville</span>
+              <ChevronDown className="w-4 h-4 text-neutral-400 shrink-0" />
+            </div>
+
+            {/* Mock Search input acting as scroll trigger */}
+            <div
+              onClick={handleSearchFocus}
+              className="flex-1 flex items-center gap-3 px-4 py-3 md:py-4 text-neutral-400 text-sm font-medium cursor-pointer bg-white rounded-xl hover:bg-neutral-50/50 transition-colors"
+            >
+              <Search className="w-5 h-5 text-neutral-400 shrink-0" />
+              <span className="text-left flex-1">Search for cakes, breads, cookies or more...</span>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      {/* Dual Explore Cards (Swiggy-style layout) */}
+      <section className="w-full max-w-6xl mx-auto px-6 md:px-12 py-12 grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+        {/* Bakery Delivery Card */}
+        <div
+          onClick={handleScrollToCatalogue}
+          className="bg-white hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 rounded-[32px] border border-neutral-200 overflow-hidden p-6 md:p-8 flex items-center justify-between cursor-pointer group shadow-sm"
+        >
+          <div className="space-y-3 flex-1 pr-4">
+            <h3 className="text-2xl md:text-3xl font-sans font-black text-brand-brown uppercase tracking-tight">
+              Bakery Delivery
+            </h3>
+            <p className="text-xs text-neutral-500 font-bold uppercase tracking-wider">
+              From our ovens to your door
+            </p>
+            <span className="inline-block bg-swiggy-orange/10 text-swiggy-orange text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-wider">
+              Fresh Daily
+            </span>
+            <div className="pt-4">
+              <span className="inline-flex items-center gap-2 bg-swiggy-orange text-white font-bold text-xs uppercase tracking-wider px-5 py-3 rounded-xl shadow-md group-hover:bg-brand-brown transition-colors">
+                Explore <ArrowRight className="w-4 h-4" />
+              </span>
+            </div>
+          </div>
+          <div className="w-32 h-32 md:w-36 md:h-36 bg-brand-cream/60 rounded-2xl overflow-hidden flex items-center justify-center text-6xl group-hover:scale-105 transition-transform shrink-0 select-none">
+            🎂
+          </div>
+        </div>
+
+        {/* Today's Specials Card */}
+        <div
+          onClick={handleScrollToCatalogue}
+          className="bg-white hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 rounded-[32px] border border-neutral-200 overflow-hidden p-6 md:p-8 flex items-center justify-between cursor-pointer group shadow-sm"
+        >
+          <div className="space-y-3 flex-1 pr-4">
+            <h3 className="text-2xl md:text-3xl font-sans font-black text-brand-brown uppercase tracking-tight">
+              Today's Specials
+            </h3>
+            <p className="text-xs text-neutral-500 font-bold uppercase tracking-wider">
+              Chef's curated delights
+            </p>
+            <span className="inline-block bg-brand-amber/10 text-brand-amber text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-wider">
+              Limited Stock
+            </span>
+            <div className="pt-4">
+              <span className="inline-flex items-center gap-2 bg-brand-amber text-white font-bold text-xs uppercase tracking-wider px-5 py-3 rounded-xl shadow-md group-hover:bg-brand-brown transition-colors">
+                Explore <ArrowRight className="w-4 h-4" />
+              </span>
+            </div>
+          </div>
+          <div className="w-32 h-32 md:w-36 md:h-36 bg-brand-rose/10 rounded-2xl overflow-hidden flex items-center justify-center text-6xl group-hover:scale-105 transition-transform shrink-0 select-none">
+            🍪
+          </div>
+        </div>
+      </section>
+    </div>
   );
 }

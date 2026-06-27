@@ -6,6 +6,15 @@ import { supabase } from '@/lib/supabase';
 import ProductCard from './ProductCard';
 import { Search, SlidersHorizontal, Loader2, ArrowUp } from 'lucide-react';
 
+const categoryEmojis: Record<string, string> = {
+  All: '🍽️',
+  Cakes: '🎂',
+  Breads: '🍞',
+  Cookies: '🍪',
+  Pastries: '🧁',
+  Seasonal: '🍩',
+};
+
 interface StorefrontCatalogueProps {
   initialProducts: Product[];
 }
@@ -195,22 +204,41 @@ export default function StorefrontCatalogue({ initialProducts }: StorefrontCatal
             </div>
           </div>
 
-          {/* Categories Horizontal Tabs */}
-          <div className="border-t border-brand-brown/5 pt-6">
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
-              {categories.map((category) => (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`px-6 py-2.5 rounded-full text-xs font-extrabold uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer ${
-                    selectedCategory === category
-                      ? 'bg-brand-brown text-brand-cream shadow-md scale-102'
-                      : 'bg-brand-brown/5 text-brand-brown hover:bg-brand-brown/10'
-                  }`}
-                >
-                  {category}
-                </button>
-              ))}
+          {/* Categories Horizontal Scroll - Circular Swiggy style */}
+          <div className="border-t border-brand-brown/5 pt-6 text-center">
+            <h3 className="text-left font-serif font-black text-brand-brown text-lg mb-6">
+              Order our best bakery options
+            </h3>
+            <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-none justify-start">
+              {categories.map((category) => {
+                const emoji = categoryEmojis[category] || '🧁';
+                const isActive = selectedCategory === category;
+
+                return (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className="flex flex-col items-center gap-2.5 group shrink-0 cursor-pointer focus:outline-none"
+                  >
+                    <div
+                      className={`w-20 h-20 rounded-full flex items-center justify-center text-3xl shadow-xs border-2 transition-all duration-300 ${
+                        isActive
+                          ? 'bg-swiggy-orange/10 border-swiggy-orange scale-105 shadow-md'
+                          : 'bg-brand-cream/40 border-transparent hover:bg-neutral-100'
+                      }`}
+                    >
+                      {emoji}
+                    </div>
+                    <span
+                      className={`text-xs font-bold tracking-wide uppercase transition-colors ${
+                        isActive ? 'text-swiggy-orange font-black' : 'text-brand-brown/70 group-hover:text-brand-brown'
+                      }`}
+                    >
+                      {category}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
