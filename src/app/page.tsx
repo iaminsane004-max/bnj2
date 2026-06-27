@@ -1,65 +1,140 @@
-import Image from "next/image";
+import React from 'react';
+import { createClient } from '@/lib/supabase-server';
+import Header from '@/components/Header';
+import Hero from '@/components/Hero';
+import StorefrontCatalogue from '@/components/StorefrontCatalogue';
+import CartDrawer from '@/components/CartDrawer';
+import { Phone, MapPin, ShieldCheck, Heart } from 'lucide-react';
+import Link from 'next/link';
 
-export default function Home() {
+// Force dynamic rendering to ensure fresh server-side data on load
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
+
+async function getInitialProducts() {
+  try {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('is_featured', { ascending: false })
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Supabase fetch error:', error);
+      return [];
+    }
+    return data || [];
+  } catch (err) {
+    console.error('Failed to get initial products:', err);
+    return [];
+  }
+}
+
+export default async function Home() {
+  const products = await getInitialProducts();
+  const shopName = process.env.NEXT_PUBLIC_SHOP_NAME || 'Bake & Joy';
+  const shopTagline = process.env.NEXT_PUBLIC_SHOP_TAGLINE || 'Fresh baked, straight to your door';
+  const shopAddress = process.env.NEXT_PUBLIC_SHOP_ADDRESS || '123 Bakery Lane, Sweet Town';
+  const ownerWhatsapp = process.env.NEXT_PUBLIC_OWNER_WHATSAPP || '';
+
+  // Client-side event trigger to focus on search bar in catalogue
+  const focusSearchScript = `
+    (function() {
+      window.triggerSearchFocus = function() {
+        window.dispatchEvent(new Event('focus-storefront-search'));
+      }
+    })()
+  `;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="flex-1 flex flex-col bg-brand-cream min-h-screen">
+      <script dangerouslySetInnerHTML={{ __html: focusSearchScript }} />
+
+      {/* Header */}
+      <Header />
+
+      {/* Hero Section */}
+      <Hero shopName={shopName} shopTagline={shopTagline} />
+
+      {/* Catalogue & Realtime Filter Grid */}
+      <StorefrontCatalogue initialProducts={products} />
+
+      {/* Footer */}
+      <footer className="mt-auto border-t border-brand-brown/10 bg-[#3B1F0E] text-[#FDF6EC] py-12 px-6 md:px-12 text-left">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-10">
+          
+          {/* Shop branding & Info */}
+          <div className="space-y-4">
+            <h3 className="text-2xl font-serif font-black tracking-wide text-[#FDF6EC]">
+              🍞 {shopName}
+            </h3>
+            <p className="text-sm text-[#FDF6EC]/70 leading-relaxed max-w-xs">
+              {shopTagline}
+            </p>
+            <div className="flex gap-3 text-xs font-bold uppercase tracking-wider text-brand-amber">
+              <ShieldCheck className="w-4 h-4" /> Payments via UPI/Cash Directly to Owner
+            </div>
+          </div>
+
+          {/* Shop Location & Contact */}
+          <div className="space-y-4">
+            <h4 className="text-xs font-black uppercase tracking-widest text-brand-amber">
+              Contact & Address
+            </h4>
+            <div className="space-y-2.5 text-sm text-[#FDF6EC]/80 font-medium">
+              <div className="flex items-start gap-2.5">
+                <MapPin className="w-5 h-5 text-brand-amber shrink-0 mt-0.5" />
+                <span>{shopAddress}</span>
+              </div>
+              {ownerWhatsapp && (
+                <div className="flex items-center gap-2.5 pt-1">
+                  <Phone className="w-4 h-4 text-brand-amber shrink-0" />
+                  <a
+                    href={`https://wa.me/${ownerWhatsapp.replace(/\D/g, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-brand-amber hover:underline transition-all"
+                  >
+                    +{ownerWhatsapp} (WhatsApp)
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Useful Links & Admin Access */}
+          <div className="space-y-4">
+            <h4 className="text-xs font-black uppercase tracking-widest text-brand-amber">
+              Shop Policies
+            </h4>
+            <ul className="space-y-2.5 text-sm text-[#FDF6EC]/85 font-medium">
+              <li>
+                <span className="text-[#FDF6EC]/60 block text-xs">Note:</span>
+                Payments are handled directly with the shop owner. We do not charge online payment gateways.
+              </li>
+              <li className="pt-4 border-t border-[#FDF6EC]/10">
+                <Link
+                  href="/admin"
+                  className="inline-flex items-center text-xs font-bold uppercase tracking-wider text-brand-amber hover:text-white transition-colors"
+                >
+                  🔐 Owner Dashboard Login &rarr;
+                </Link>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto border-t border-[#FDF6EC]/10 mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-[#FDF6EC]/50 gap-4">
+          <p>&copy; {new Date().getFullYear()} {shopName}. All rights reserved.</p>
+          <p className="flex items-center gap-1">
+            Made with <Heart className="w-3.5 h-3.5 text-brand-amber fill-brand-amber" /> for sweet cravings.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      </footer>
+
+      {/* Cart Slider Drawer */}
+      <CartDrawer />
     </div>
   );
 }
